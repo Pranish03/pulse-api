@@ -1,6 +1,10 @@
 import express from "express";
+import { createServer } from "node:http";
+import { Server } from "socket.io";
 
 const app = express();
+const server = createServer(app);
+const io = new Server(server);
 
 app.use(express.json());
 
@@ -10,8 +14,12 @@ app.get("/", (req, res) => {
   });
 });
 
+io.on("connection", () => {
+  console.log("User connected");
+});
+
 const PORT = 3000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
