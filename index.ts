@@ -1,4 +1,5 @@
-import express from "express";
+import "dotenv/config";
+import express, { type Request, type Response } from "express";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 
@@ -8,7 +9,7 @@ const io = new Server(server);
 
 app.use(express.json());
 
-app.get("/", (req, res) => {
+app.get("/", (req: Request, res: Response) => {
   res.json({
     message: "Hello World!",
   });
