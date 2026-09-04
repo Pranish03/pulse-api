@@ -1,6 +1,7 @@
 import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { conversation } from "./conversation-schema.js";
 import { user } from "./auth-schema.js";
+import { relations } from "drizzle-orm";
 
 export const message = pgTable(
   "message",
@@ -24,3 +25,11 @@ export const message = pgTable(
     ),
   ],
 );
+
+export const messageRelations = relations(message, ({ one }) => ({
+  conversation: one(conversation, {
+    fields: [message.conversationId],
+    references: [conversation.id],
+  }),
+  sender: one(user, { fields: [message.senderId], references: [user.id] }),
+}));

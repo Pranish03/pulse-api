@@ -6,6 +6,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema.js";
+import { relations } from "drizzle-orm";
 
 export const friendship = pgTable(
   "friendship",
@@ -32,3 +33,16 @@ export const friendship = pgTable(
     index("friendship_addresseeId_idx").on(table.addresseeId),
   ],
 );
+
+export const friendshipRelations = relations(friendship, ({ one }) => ({
+  requester: one(user, {
+    fields: [friendship.requesterId],
+    references: [user.id],
+    relationName: "sentFriendRequests",
+  }),
+  addressee: one(user, {
+    fields: [friendship.addresseeId],
+    references: [user.id],
+    relationName: "receivedFriendRequests",
+  }),
+}));

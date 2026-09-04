@@ -7,6 +7,8 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema.js";
+import { relations } from "drizzle-orm";
+import { message } from "./message-schema.js";
 
 export const conversation = pgTable("conversation", {
   id: text("id").primaryKey(),
@@ -42,4 +44,30 @@ export const conversationParticipant = pgTable(
     ),
     index("conversation_participant_userId_idx").on(table.userId),
   ],
+);
+
+export const conversationRelations = relations(
+  conversation,
+  ({ one, many }) => ({
+    creator: one(user, {
+      fields: [conversation.createdBy],
+      references: [user.id],
+    }),
+    participants: many(conversationParticipant),
+    messages: many(message),
+  }),
+);
+
+export const conversationParticipantRelations = relations(
+  conversationParticipant,
+  ({ one }) => ({
+    conversation: one(conversation, {
+      fields: [conversationParticipant.conversationId],
+      references: [conversation.id],
+    }),
+    user: one(user, {
+      fields: [conversationParticipant.userId],
+      references: [user.id],
+    }),
+  }),
 );

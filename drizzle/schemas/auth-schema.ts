@@ -7,6 +7,9 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { conversationParticipant } from "./conversation-schema.js";
+import { message } from "./message-schema.js";
+import { friendship } from "./friendship-schema.js";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -90,6 +93,12 @@ export const verification = pgTable(
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
+  conversationParticipants: many(conversationParticipant),
+  sentMessages: many(message),
+  sentFriendRequests: many(friendship, { relationName: "sentFriendRequests" }),
+  receivedFriendRequests: many(friendship, {
+    relationName: "receivedFriendRequests",
+  }),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
