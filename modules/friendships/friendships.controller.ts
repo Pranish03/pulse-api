@@ -1,13 +1,7 @@
 import type { Request, Response } from "express";
 import { db } from "../../drizzle/db.js";
-import {
-  friendship,
-  friendshipStatusEnum,
-  user,
-} from "../../drizzle/schema.js";
+import { friendship, user } from "../../drizzle/schema.js";
 import { and, eq, or } from "drizzle-orm";
-import z from "zod";
-import { sendFriendRequestSchema } from "./friendships.schema.js";
 
 export async function getAllFriends(req: Request, res: Response) {
   const { id: userId } = req.user;
@@ -73,15 +67,7 @@ export async function getOutgoingFriendRequests(req: Request, res: Response) {
 
 export async function sendFriendRequest(req: Request, res: Response) {
   const { id: requesterId } = req.user;
-  const parsedData = z.safeParse(sendFriendRequestSchema, req.body);
-
-  if (!parsedData.success)
-    return res.status(400).json({
-      message: "Validation error",
-      error: z.prettifyError(parsedData.error),
-    });
-
-  const { addresseeId } = parsedData.data;
+  const { addresseeId } = req.body;
 
   if (requesterId === addresseeId)
     return res
