@@ -7,6 +7,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema.js";
+import { randomUUID } from "node:crypto";
 
 export const friendshipStatusEnum = pgEnum("friendship_status", [
   "pending",
@@ -18,7 +19,9 @@ export const friendshipStatusEnum = pgEnum("friendship_status", [
 export const friendship = pgTable(
   "friendship",
   {
-    id: text("id").primaryKey(),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
     requesterId: text("requester_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),

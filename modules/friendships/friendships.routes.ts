@@ -4,6 +4,7 @@ import {
   getAllFriends,
   getIncomingFriendRequests,
   getOutgoingFriendRequests,
+  sendFriendRequest,
 } from "./friendships.controller.js";
 
 export const friendshipRouter = Router();
@@ -11,3 +12,4 @@ export const friendshipRouter = Router();
 friendshipRouter.get("/", requireAuth, getAllFriends);
 friendshipRouter.get("/requests", requireAuth, getIncomingFriendRequests);
 friendshipRouter.get("/requests/sent", requireAuth, getOutgoingFriendRequests);
+friendshipRouter.post("/requests", requireAuth, sendFriendRequest);
