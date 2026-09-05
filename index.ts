@@ -6,6 +6,7 @@ import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.js";
 import { userRouter } from "./modules/users/users.routes.js";
 import { FRONTEND_URL, PORT } from "./config/constants.js";
+import { errorHandler } from "./middlewares/error.middleware.js";
 
 const app = express();
 const server = createServer(app);
@@ -28,6 +29,8 @@ app.get("/", (req: Request, res: Response) => {
     message: "Hello World!",
   });
 });
+
+app.use(errorHandler);
 
 io.on("connection", () => {
   console.log("User connected");
