@@ -7,6 +7,7 @@ import { auth } from "./lib/auth.js";
 import { userRouter } from "./modules/users/users.routes.js";
 import { FRONTEND_URL, PORT } from "./config/constants.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
+import { friendshipRouter } from "./modules/friendships/friendships.routes.js";
 
 const app = express();
 const server = createServer(app);
@@ -23,6 +24,7 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(express.json());
 
 app.use("/api/users", userRouter);
+app.use("/api/friends", friendshipRouter);
 
 app.get("/", (req: Request, res: Response) => {
   res.json({
