@@ -30,3 +30,22 @@ export async function getAllFriends(req: Request, res: Response) {
 
   return res.status(200).json({ data: friends });
 }
+
+export async function getIncomingFriendRequests(req: Request, res: Response) {
+  const { id: userId } = req.user;
+
+  const incomingRequests = await db
+    .select({
+      friendshipId: friendship.id,
+      requesterId: user.id,
+      name: user.name,
+      image: user.image,
+    })
+    .from(friendship)
+    .innerJoin(user, eq(user.id, friendship.requesterId))
+    .where(
+      and(eq(friendship.addresseeId, userId), eq(friendship.status, "pending")),
+    );
+
+  return res.status(200).json({ data: incomingRequests });
+}
