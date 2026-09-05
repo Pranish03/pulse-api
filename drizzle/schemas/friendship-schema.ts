@@ -1,11 +1,19 @@
 import {
   index,
+  pgEnum,
   pgTable,
   text,
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema.js";
+
+export const friendshipStatusEnum = pgEnum("friendship_status", [
+  "pending",
+  "accepted",
+  "rejected",
+  "blocked",
+]);
 
 export const friendship = pgTable(
   "friendship",
@@ -17,7 +25,7 @@ export const friendship = pgTable(
     addresseeId: text("addressee_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    status: text("status").notNull().default("pending"),
+    status: friendshipStatusEnum("status").notNull().default("pending"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at")
       .notNull()
