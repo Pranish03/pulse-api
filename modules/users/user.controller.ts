@@ -12,15 +12,7 @@ export function getProfile(req: Request, res: Response) {
 }
 
 export async function updateProfile(req: Request, res: Response) {
-  const parsedData = z.safeParse(profileUpdateSchema, req.body);
-
-  if (!parsedData.success)
-    return res.status(400).json({
-      message: "Validation error",
-      error: z.prettifyError(parsedData.error),
-    });
-
-  const { name, image } = parsedData.data;
+  const { name, image } = req.body;
 
   const updateBody: Record<string, unknown> = {};
   if (name !== undefined) updateBody.name = name;
@@ -35,15 +27,7 @@ export async function updateProfile(req: Request, res: Response) {
 }
 
 export async function searchUsers(req: Request, res: Response) {
-  const parsedQuery = z.safeParse(userQuerySchema, req.query);
-
-  if (!parsedQuery.success)
-    return res.status(400).json({
-      message: "Validation error",
-      error: z.prettifyError(parsedQuery.error),
-    });
-
-  const { q, limit } = parsedQuery.data;
+  const { q, limit } = req.query;
   const searchPattern = `%${q}%`;
   const users = await db
     .select({ id: user.id, name: user.name, image: user.image })
