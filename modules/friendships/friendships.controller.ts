@@ -49,3 +49,22 @@ export async function getIncomingFriendRequests(req: Request, res: Response) {
 
   return res.status(200).json({ data: incomingRequests });
 }
+
+export async function getOutgoingFriendRequests(req: Request, res: Response) {
+  const { id: userId } = req.user;
+
+  const outgoingRequests = await db
+    .select({
+      friendshipId: friendship.id,
+      addresseeId: user.id,
+      name: user.name,
+      image: user.image,
+    })
+    .from(friendship)
+    .innerJoin(user, eq(user.id, friendship.addresseeId))
+    .where(
+      and(eq(friendship.requesterId, userId), eq(friendship.status, "pending")),
+    );
+
+  return res.status(200).json({ data: outgoingRequests });
+}
