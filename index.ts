@@ -5,6 +5,7 @@ import { createServer } from "node:http";
 import { Server } from "socket.io";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.js";
+import { userRouter } from "./modules/users/users.routes.js";
 
 const app = express();
 const server = createServer(app);
@@ -21,6 +22,8 @@ app.use(
 
 app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(express.json());
+
+app.use("/api/users", userRouter);
 
 app.get("/", (req: Request, res: Response) => {
   res.json({
