@@ -1,9 +1,13 @@
-import type { NextFunction, Request, Response } from "express";
-import { z, type ZodType } from "zod";
+import type { Request, Response, NextFunction, RequestHandler } from "express";
+import type { ZodType } from "zod";
+import { z } from "zod";
 
 type ValidationTarget = "body" | "query" | "params";
 
-export function validate(schema: ZodType, target: ValidationTarget = "body") {
+export function validate<T extends ZodType>(
+  schema: T,
+  target: ValidationTarget = "body",
+): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
     const parsedData = z.safeParse(schema, req[target]);
 

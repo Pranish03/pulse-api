@@ -14,3 +14,5 @@ export const userQuerySchema = z.object({
   q: z.string().trim().min(3),
   limit: z.coerce.number().int().positive().max(100).default(10),
 });
+
+export type UserQuery = z.infer<typeof userQuerySchema>;

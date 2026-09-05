@@ -1,6 +1,5 @@
 import type { Request, Response } from "express";
-import { profileUpdateSchema, userQuerySchema } from "./user.schema.js";
-import z from "zod";
+import { type UserQuery } from "./user.schema.js";
 import { auth } from "../../lib/auth.js";
 import { fromNodeHeaders } from "better-auth/node";
 import { db } from "../../drizzle/db.js";
@@ -27,7 +26,7 @@ export async function updateProfile(req: Request, res: Response) {
 }
 
 export async function searchUsers(req: Request, res: Response) {
-  const { q, limit } = req.query;
+  const { q, limit } = req.query as unknown as UserQuery;
   const searchPattern = `%${q}%`;
   const users = await db
     .select({ id: user.id, name: user.name, image: user.image })
