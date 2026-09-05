@@ -1,11 +1,11 @@
-import "dotenv/config";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../drizzle/db.js";
+import { BETTER_AUTH_URL, FRONTEND_URL } from "../config/constants.js";
 
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL!,
-  trustedOrigins: [process.env.FRONTEND_URL!],
+  baseURL: BETTER_AUTH_URL,
+  trustedOrigins: [FRONTEND_URL],
   database: drizzleAdapter(db, {
     provider: "pg",
   }),
