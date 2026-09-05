@@ -10,7 +10,7 @@ export async function uploadToCloudinary(
 ) {
   try {
     const file = req.file;
-    if (!file) return res.status(400).json({ message: "No file uploaded" });
+    if (!file) return next();
 
     const result = await new Promise<UploadApiResponse>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
@@ -31,7 +31,7 @@ export async function uploadToCloudinary(
       Readable.from(file.buffer).pipe(stream);
     });
 
-    file.cloudinary = result;
+    req.body.image = result.secure_url;
     next();
   } catch (error) {
     console.error("Cloudinary upload failed:", error);
