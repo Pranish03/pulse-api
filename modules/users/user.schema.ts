@@ -10,4 +10,7 @@ export const profileUpdateSchema = z
   })
   .partial();
 
-export type UpdateProfile = z.infer<typeof profileUpdateSchema>;
+export const userQuerySchema = z.object({
+  q: z.string().trim().min(3),
+  limit: z.coerce.number().int().positive().max(100).default(10),
+});
