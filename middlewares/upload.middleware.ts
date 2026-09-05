@@ -1,6 +1,7 @@
-import type { NextFunction, Request, Response } from "express";
-import cloudinary from "../config/cloudinary.js";
+import type { Request, Response, NextFunction } from "express";
 import { Readable } from "stream";
+import cloudinary from "../config/cloudinary.js";
+import type { UploadApiResponse } from "cloudinary";
 
 export async function uploadToCloudinary(
   req: Request,
@@ -8,23 +9,26 @@ export async function uploadToCloudinary(
   next: NextFunction,
 ) {
   try {
-    if (!req.file)
-      return res.status(400).json({
-        message: "No file uploaded",
-      });
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
-    const result = await new Promise((resolve, reject) => {
+    const result = await new Promise<UploadApiResponse>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
-          floder: "queek/users",
+          folder: "my-app/users",
           resource_type: "auto",
         },
         (error, result) => {
           if (error) {
             reject(error);
-          } else {
-            resolve(result);
+            return;
           }
+
+          if (!result) {
+            reject(new Error("Cloudinary upload returned no result"));
+            return;
+          }
+
+          resolve(result);
         },
       );
 
