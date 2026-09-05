@@ -9,34 +9,29 @@ export async function uploadToCloudinary(
   next: NextFunction,
 ) {
   try {
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    const file = req.file;
+    if (!file) return res.status(400).json({ message: "No file uploaded" });
 
     const result = await new Promise<UploadApiResponse>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
           folder: "my-app/users",
-          resource_type: "auto",
+          resource_type: "image",
         },
         (error, result) => {
-          if (error) {
-            reject(error);
-            return;
-          }
+          if (error) return reject(error);
 
-          if (!result) {
-            reject(new Error("Cloudinary upload returned no result"));
-            return;
-          }
+          if (!result)
+            return reject(new Error("Cloudinary upload returned no result"));
 
           resolve(result);
         },
       );
 
-      Readable.from(req.file!.buffer).pipe(stream);
+      Readable.from(file.buffer).pipe(stream);
     });
 
-    req.file.cloudinary = result;
-
+    file.cloudinary = result;
     next();
   } catch (error) {
     console.error("Cloudinary upload failed:", error);
