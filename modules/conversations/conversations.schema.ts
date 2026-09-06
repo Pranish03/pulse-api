@@ -41,3 +41,12 @@ export const addParticipantsSchema = z.object({
 });
 
 export type AddParticipantsInput = z.infer<typeof addParticipantsSchema>;
+
+export const conversationParticipantParamsSchema = z.object({
+  id: z.uuid("Invalid conversation ID"),
+  userId: z.string().min(1),
+});
+
+export type ConversationParticipantParams = z.infer<
+  typeof conversationParticipantParamsSchema
+>;

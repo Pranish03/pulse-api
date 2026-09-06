@@ -325,3 +325,60 @@ export async function addParticipantsToConversation(
 
   return inserted;
 }
+
+export async function removeParticipantFromConversation(
+  requesterId: string,
+  conversationId: string,
+  targetUserId: string,
+) {
+  const [membership] = await db
+    .select({
+      role: conversationParticipant.role,
+      isGroup: conversation.isGroup,
+    })
+    .from(conversationParticipant)
+    .innerJoin(
+      conversation,
+      eq(conversationParticipant.conversationId, conversation.id),
+    )
+    .where(
+      and(
+        eq(conversationParticipant.conversationId, conversationId),
+        eq(conversationParticipant.userId, requesterId),
+      ),
+    )
+    .limit(1);
+
+  if (!membership) throw new AppError("Conversation not found", 404);
+  if (!membership.isGroup)
+    throw new AppError("Cannot remove participants from a direct message", 400);
+
+  const isSelfRemoval = requesterId === targetUserId;
+
+  if (!isSelfRemoval && membership.role !== "admin") {
+    throw new AppError("Only group admins can remove other participants", 403);
+  }
+
+  if (isSelfRemoval) {
+    return deleteOrLeaveConversation(requesterId, conversationId);
+  }
+
+  const [target] = await db
+    .select({ id: conversationParticipant.id })
+    .from(conversationParticipant)
+    .where(
+      and(
+        eq(conversationParticipant.conversationId, conversationId),
+        eq(conversationParticipant.userId, targetUserId),
+      ),
+    )
+    .limit(1);
+
+  if (!target) throw new AppError("User is not a participant", 404);
+
+  await db
+    .delete(conversationParticipant)
+    .where(eq(conversationParticipant.id, target.id));
+
+  return { message: "Participant removed" };
+}

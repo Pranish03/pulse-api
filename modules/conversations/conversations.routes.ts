@@ -5,6 +5,7 @@ import {
   deleteConversation,
   getAllConversations,
   getConversation,
+  removeParticipant,
   updateConversation,
 } from "./conversations.controller.js";
 import { requireAuth } from "../../middlewares/auth.middleware.js";
@@ -12,6 +13,7 @@ import { validate } from "../../middlewares/validate.middleware.js";
 import {
   addParticipantsSchema,
   conversationParamsSchema,
+  conversationParticipantParamsSchema,
   createConversationSchema,
   updateConversationSchema,
 } from "./conversations.schema.js";
@@ -59,4 +61,11 @@ conversationRouter.post(
   validate(conversationParamsSchema, "params"),
   validate(addParticipantsSchema, "body"),
   addParticipants,
+);
+
+conversationRouter.delete(
+  "/:id/participants/:userId",
+  requireAuth,
+  validate(conversationParticipantParamsSchema, "params"),
+  removeParticipant,
 );

@@ -5,11 +5,13 @@ import {
   deleteOrLeaveConversation,
   getConversationById,
   getConversationsForUser,
+  removeParticipantFromConversation,
   updateConversationById,
 } from "./conversations.service.js";
 import type {
   AddParticipantsInput,
   ConversationParams,
+  ConversationParticipantParams,
   CreateConversationInput,
   UpdateConversationInput,
 } from "./conversations.schema.js";
@@ -80,4 +82,17 @@ export async function addParticipants(req: Request, res: Response) {
   );
 
   return res.status(201).json({ message: "Participants added", data: added });
+}
+
+export async function removeParticipant(req: Request, res: Response) {
+  const { id: requesterId } = req.user;
+  const { id: conversationId, userId: targetUserId } =
+    req.params as unknown as ConversationParticipantParams;
+  const result = await removeParticipantFromConversation(
+    requesterId,
+    conversationId,
+    targetUserId,
+  );
+
+  return res.status(200).json({ message: result.message });
 }
