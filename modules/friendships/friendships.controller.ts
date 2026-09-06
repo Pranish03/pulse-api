@@ -1,7 +1,4 @@
 import type { Request, Response } from "express";
-import { db } from "../../drizzle/db.js";
-import { friendship, user } from "../../drizzle/schema.js";
-import { and, eq, or } from "drizzle-orm";
 import type {
   FriendshipParams,
   UpdateFriendRequest,
