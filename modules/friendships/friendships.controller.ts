@@ -2,6 +2,10 @@ import type { Request, Response } from "express";
 import { db } from "../../drizzle/db.js";
 import { friendship, user } from "../../drizzle/schema.js";
 import { and, eq, or } from "drizzle-orm";
+import type {
+  FriendshipParams,
+  UpdateFriendRequest,
+} from "./friendships.schema.js";
 
 export async function getAllFriends(req: Request, res: Response) {
   const { id: userId } = req.user;
@@ -110,4 +114,36 @@ export async function sendFriendRequest(req: Request, res: Response) {
   return res
     .status(201)
     .json({ message: "Friend request sent", data: newFriendship });
+}
+
+export async function updateFriendRequest(req: Request, res: Response) {
+  const { id: userId } = req.user;
+  const { id: friendshipId } = req.params as unknown as FriendshipParams;
+  const { action } = req.body as unknown as UpdateFriendRequest;
+
+  const status = action === "accept" ? "accepted" : "rejected";
+
+  const [newFriendship] = await db
+    .update(friendship)
+    .set({ status })
+    .where(
+      and(
+        eq(friendship.id, friendshipId),
+        eq(friendship.addresseeId, userId),
+        eq(friendship.status, "pending"),
+      ),
+    )
+    .returning();
+
+  if (!newFriendship) {
+    return res.status(404).json({ message: "Friend request not found" });
+  }
+
+  return res.status(200).json({
+    message:
+      status === "accepted"
+        ? "Friend request accepted"
+        : "Friend request rejected",
+    data: newFriendship,
+  });
 }
