@@ -147,3 +147,38 @@ export async function updateFriendRequest(req: Request, res: Response) {
     data: newFriendship,
   });
 }
+
+export async function deleteFriendship(req: Request, res: Response) {
+  const { id: userId } = req.user;
+  const { id: friendshipId } = req.params as unknown as FriendshipParams;
+
+  const [friendshipExists] = await db
+    .select()
+    .from(friendship)
+    .where(eq(friendship.id, friendshipId))
+    .limit(1);
+
+  if (!friendshipExists)
+    return res.status(404).json({ message: "Friendship not found" });
+
+  if (
+    friendshipExists.status === "accepted" &&
+    (friendshipExists.requesterId === userId ||
+      friendshipExists.addresseeId === userId)
+  ) {
+    await db.delete(friendship).where(eq(friendship.id, friendshipId));
+    return res.status(200).json({ message: "Friend removed" });
+  }
+
+  if (
+    friendshipExists.status === "pending" &&
+    friendshipExists.requesterId === userId
+  ) {
+    await db.delete(friendship).where(eq(friendship.id, friendshipId));
+    return res.status(200).json({ message: "Friend request cancelled" });
+  }
+
+  return res
+    .status(403)
+    .json({ message: "You are not allowed to delete this friendship" });
+}

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth.middleware.js";
 import {
+  deleteFriendship,
   getAllFriends,
   getIncomingFriendRequests,
   getOutgoingFriendRequests,
@@ -31,4 +32,10 @@ friendshipRouter.patch(
   validate(friendshipParamsSchema, "params"),
   validate(updateFriendRequestSchema, "body"),
   updateFriendRequest,
+);
+friendshipRouter.delete(
+  "/:id",
+  requireAuth,
+  validate(friendshipParamsSchema, "params"),
+  deleteFriendship,
 );
