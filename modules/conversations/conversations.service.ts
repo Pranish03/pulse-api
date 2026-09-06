@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { db } from "../../drizzle/db.js";
 import {
   conversation,
@@ -203,4 +203,75 @@ export async function updateConversationById(
     });
 
   return updatedConversation;
+}
+
+export async function deleteOrLeaveConversation(
+  userId: string,
+  conversationId: string,
+) {
+  const [membership] = await db
+    .select({
+      participantId: conversationParticipant.id,
+      role: conversationParticipant.role,
+      isGroup: conversation.isGroup,
+    })
+    .from(conversationParticipant)
+    .innerJoin(
+      conversation,
+      eq(conversationParticipant.conversationId, conversation.id),
+    )
+    .where(
+      and(
+        eq(conversationParticipant.conversationId, conversationId),
+        eq(conversationParticipant.userId, userId),
+      ),
+    )
+    .limit(1);
+
+  if (!membership) throw new AppError("Conversation not found", 404);
+
+  if (!membership.isGroup) {
+    throw new AppError("You cannot leave a direct message conversation", 400);
+  }
+
+  const remainingParticipants = await db
+    .select({
+      id: conversationParticipant.id,
+      userId: conversationParticipant.userId,
+      role: conversationParticipant.role,
+      joinedAt: conversationParticipant.joinedAt,
+    })
+    .from(conversationParticipant)
+    .where(
+      and(
+        eq(conversationParticipant.conversationId, conversationId),
+        ne(conversationParticipant.userId, userId),
+      ),
+    );
+
+  if (remainingParticipants.length === 0) {
+    await db.delete(conversation).where(eq(conversation.id, conversationId));
+    return { message: "Conversation deleted" };
+  }
+
+  if (membership.role === "admin") {
+    const hasOtherAdmin = remainingParticipants.some((p) => p.role === "admin");
+
+    if (!hasOtherAdmin) {
+      const nextAdmin = remainingParticipants.reduce((earliest, current) =>
+        current.joinedAt < earliest.joinedAt ? current : earliest,
+      );
+
+      await db
+        .update(conversationParticipant)
+        .set({ role: "admin" })
+        .where(eq(conversationParticipant.id, nextAdmin.id));
+    }
+  }
+
+  await db
+    .delete(conversationParticipant)
+    .where(eq(conversationParticipant.id, membership.participantId));
+
+  return { message: "Left conversation successfully" };
 }

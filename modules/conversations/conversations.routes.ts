@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createNewConversation,
+  deleteConversation,
   getAllConversations,
   getConversation,
   updateConversation,
@@ -43,9 +44,15 @@ conversationRouter.patch(
   updateConversation,
 );
 
+conversationRouter.delete(
+  "/:id",
+  requireAuth,
+  validate(conversationParamsSchema, "params"),
+  deleteConversation,
+);
+
 /**
  * Todo:
- * PATCH	/api/conversations/:id	                        Update group name/avatar
  * DELETE	/api/conversations/:id	                        Delete/leave a conversation
  * POST	    /api/conversations/:id/participants	            Add member(s) to a group
  * DELETE	/api/conversations/:id/participants/:userId	    Remove a member / leave

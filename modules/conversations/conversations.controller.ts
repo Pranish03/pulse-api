@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import {
   createConversation,
+  deleteOrLeaveConversation,
   getConversationById,
   getConversationsForUser,
   updateConversationById,
@@ -55,4 +56,13 @@ export async function updateConversation(req: Request, res: Response) {
     message: "Conversation updated successfully",
     data: updatedConversation,
   });
+}
+
+export async function deleteConversation(req: Request, res: Response) {
+  const { id: userId } = req.user;
+  const { id: conversationId } = req.params as unknown as ConversationParams;
+
+  const { message } = await deleteOrLeaveConversation(userId, conversationId);
+
+  return res.status(200).json({ message });
 }
