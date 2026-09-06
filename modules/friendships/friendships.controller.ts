@@ -7,9 +7,12 @@ import type {
   UpdateFriendRequest,
 } from "./friendships.schema.js";
 import {
+  createFriendRequest,
   getAllFriendsForUser,
   getAllIncomingRequestsForUser,
   getAllOutgoingRequestsFromUser,
+  removeFriendOrCancelRequest,
+  updateFriendshipStatus,
 } from "./friendships.service.js";
 
 export async function getAllFriends(req: Request, res: Response) {
@@ -36,44 +39,7 @@ export async function getOutgoingFriendRequests(req: Request, res: Response) {
 export async function sendFriendRequest(req: Request, res: Response) {
   const { id: requesterId } = req.user;
   const { addresseeId } = req.body;
-
-  if (requesterId === addresseeId)
-    return res
-      .status(400)
-      .json({ message: "You cannot send a friend request to yourself" });
-
-  const [addressee] = await db
-    .select({ id: user.id })
-    .from(user)
-    .where(eq(user.id, addresseeId))
-    .limit(1);
-
-  if (!addressee) return res.status(404).json({ message: "User not found" });
-
-  const [existingFriendship] = await db
-    .select()
-    .from(friendship)
-    .where(
-      or(
-        and(
-          eq(friendship.requesterId, requesterId),
-          eq(friendship.addresseeId, addresseeId),
-        ),
-        and(
-          eq(friendship.requesterId, addresseeId),
-          eq(friendship.addresseeId, requesterId),
-        ),
-      ),
-    )
-    .limit(1);
-
-  if (existingFriendship)
-    return res.status(400).json({ message: "Friendship already exists" });
-
-  const [newFriendship] = await db
-    .insert(friendship)
-    .values({ requesterId, addresseeId, status: "pending" })
-    .returning();
+  const newFriendship = await createFriendRequest(requesterId, addresseeId);
 
   return res
     .status(201)
@@ -84,28 +50,15 @@ export async function updateFriendRequest(req: Request, res: Response) {
   const { id: userId } = req.user;
   const { id: friendshipId } = req.params as unknown as FriendshipParams;
   const { action } = req.body as unknown as UpdateFriendRequest;
-
-  const status = action === "accept" ? "accepted" : "rejected";
-
-  const [newFriendship] = await db
-    .update(friendship)
-    .set({ status })
-    .where(
-      and(
-        eq(friendship.id, friendshipId),
-        eq(friendship.addresseeId, userId),
-        eq(friendship.status, "pending"),
-      ),
-    )
-    .returning();
-
-  if (!newFriendship) {
-    return res.status(404).json({ message: "Friend request not found" });
-  }
+  const newFriendship = await updateFriendshipStatus(
+    userId,
+    friendshipId,
+    action,
+  );
 
   return res.status(200).json({
     message:
-      status === "accepted"
+      newFriendship.status === "accepted"
         ? "Friend request accepted"
         : "Friend request rejected",
     data: newFriendship,
@@ -115,34 +68,7 @@ export async function updateFriendRequest(req: Request, res: Response) {
 export async function deleteFriendship(req: Request, res: Response) {
   const { id: userId } = req.user;
   const { id: friendshipId } = req.params as unknown as FriendshipParams;
+  const { message } = await removeFriendOrCancelRequest(userId, friendshipId);
 
-  const [friendshipExists] = await db
-    .select()
-    .from(friendship)
-    .where(eq(friendship.id, friendshipId))
-    .limit(1);
-
-  if (!friendshipExists)
-    return res.status(404).json({ message: "Friendship not found" });
-
-  if (
-    friendshipExists.status === "accepted" &&
-    (friendshipExists.requesterId === userId ||
-      friendshipExists.addresseeId === userId)
-  ) {
-    await db.delete(friendship).where(eq(friendship.id, friendshipId));
-    return res.status(200).json({ message: "Friend removed" });
-  }
-
-  if (
-    friendshipExists.status === "pending" &&
-    friendshipExists.requesterId === userId
-  ) {
-    await db.delete(friendship).where(eq(friendship.id, friendshipId));
-    return res.status(200).json({ message: "Friend request cancelled" });
-  }
-
-  return res
-    .status(403)
-    .json({ message: "You are not allowed to delete this friendship" });
+  return res.status(200).json({ message });
 }
