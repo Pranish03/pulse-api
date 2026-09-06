@@ -1,6 +1,10 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../drizzle/db.js";
-import { conversation, conversationParticipant } from "../../drizzle/schema.js";
+import {
+  conversation,
+  conversationParticipant,
+  user,
+} from "../../drizzle/schema.js";
 import { AppError } from "../../lib/errors.js";
 
 export async function getConversationsForUser(userId: string) {
@@ -100,4 +104,48 @@ async function findExistingDirectConversation(
     .having(sql`count(*) = 2`);
 
   return existing[0] ?? null;
+}
+
+export async function getConversationById(
+  userId: string,
+  conversationId: string,
+) {
+  const result = await db
+    .select({
+      conversation: {
+        id: conversation.id,
+        isGroup: conversation.isGroup,
+        name: conversation.name,
+        avatarUrl: conversation.avatarUrl,
+        createdBy: conversation.createdBy,
+        createdAt: conversation.createdAt,
+        updatedAt: conversation.updatedAt,
+      },
+      participant: {
+        id: conversationParticipant.id,
+        userId: user.id,
+        name: user.name,
+        image: user.image,
+        role: conversationParticipant.role,
+        joinedAt: conversationParticipant.joinedAt,
+        lastReadAt: conversationParticipant.lastReadAt,
+      },
+    })
+    .from(conversationParticipant)
+    .innerJoin(
+      conversation,
+      eq(conversationParticipant.conversationId, conversation.id),
+    )
+    .innerJoin(user, eq(conversationParticipant.userId, user.id))
+    .where(eq(conversation.id, conversationId));
+
+  if (result.length === 0) throw new AppError("Conversation not found", 404);
+
+  const isParticipant = result.some((row) => row.participant.userId === userId);
+  if (!isParticipant) throw new AppError("Conversation not found", 404);
+
+  return {
+    ...result[0].conversation,
+    participants: result.map((row) => row.participant),
+  };
 }

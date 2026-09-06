@@ -1,12 +1,13 @@
 import type { Request, Response } from "express";
-import { db } from "../../drizzle/db.js";
-import { conversation, conversationParticipant } from "../../drizzle/schema.js";
-import { eq } from "drizzle-orm";
 import {
   createConversation,
+  getConversationById,
   getConversationsForUser,
 } from "./conversations.service.js";
-import type { CreateConversationInput } from "./conversations.schema.js";
+import type {
+  ConversationParams,
+  CreateConversationInput,
+} from "./conversations.schema.js";
 
 export async function getAllConversations(req: Request, res: Response) {
   const { id: userId } = req.user;
@@ -27,4 +28,12 @@ export async function createNewConversation(req: Request, res: Response) {
   );
 
   return res.status(created ? 201 : 200).json({ data: conversation });
+}
+
+export async function getConversation(req: Request, res: Response) {
+  const { id: userId } = req.user;
+  const { id: conversationId } = req.params as unknown as ConversationParams;
+  const conversationData = await getConversationById(userId, conversationId);
+
+  return res.status(200).json({ data: conversationData });
 }

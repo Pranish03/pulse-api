@@ -18,3 +18,9 @@ export const createConversationSchema = z
   });
 
 export type CreateConversationInput = z.infer<typeof createConversationSchema>;
+
+export const conversationParamsSchema = z.object({
+  id: z.uuid("Invalid conversation ID"),
+});
+
+export type ConversationParams = z.infer<typeof conversationParamsSchema>;
