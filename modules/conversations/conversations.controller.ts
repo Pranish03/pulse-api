@@ -74,7 +74,6 @@ export async function addParticipants(req: Request, res: Response) {
   const { id: requesterId } = req.user;
   const { id: conversationId } = req.params as unknown as ConversationParams;
   const { participantIds } = req.body as unknown as AddParticipantsInput;
-
   const added = await addParticipantsToConversation(
     requesterId,
     conversationId,
