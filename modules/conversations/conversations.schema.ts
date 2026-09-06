@@ -24,3 +24,12 @@ export const conversationParamsSchema = z.object({
 });
 
 export type ConversationParams = z.infer<typeof conversationParamsSchema>;
+
+export const updateConversationSchema = z
+  .object({
+    name: z.string().min(1).max(100),
+    avatarUrl: z.string().url(),
+  })
+  .partial();
+
+export type UpdateConversationInput = z.infer<typeof updateConversationSchema>;

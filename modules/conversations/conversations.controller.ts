@@ -3,10 +3,12 @@ import {
   createConversation,
   getConversationById,
   getConversationsForUser,
+  updateConversationById,
 } from "./conversations.service.js";
 import type {
   ConversationParams,
   CreateConversationInput,
+  UpdateConversationInput,
 } from "./conversations.schema.js";
 
 export async function getAllConversations(req: Request, res: Response) {
@@ -36,4 +38,21 @@ export async function getConversation(req: Request, res: Response) {
   const conversationData = await getConversationById(userId, conversationId);
 
   return res.status(200).json({ data: conversationData });
+}
+
+export async function updateConversation(req: Request, res: Response) {
+  const { id: userId } = req.user;
+  const { id: conversationId } = req.params as unknown as ConversationParams;
+  const { name, avatarUrl } = req.body as unknown as UpdateConversationInput;
+  const updatedConversation = await updateConversationById(
+    userId,
+    conversationId,
+    name,
+    avatarUrl,
+  );
+
+  return res.status(200).json({
+    message: "Conversation updated successfully",
+    data: updatedConversation,
+  });
 }

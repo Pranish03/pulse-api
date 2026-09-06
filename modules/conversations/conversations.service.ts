@@ -149,3 +149,58 @@ export async function getConversationById(
     participants: result.map((row) => row.participant),
   };
 }
+
+export async function updateConversationById(
+  userId: string,
+  conversationId: string,
+  name?: string,
+  avatarUrl?: string,
+) {
+  const [membership] = await db
+    .select({
+      role: conversationParticipant.role,
+      isGroup: conversation.isGroup,
+    })
+    .from(conversationParticipant)
+    .innerJoin(
+      conversation,
+      eq(conversationParticipant.conversationId, conversation.id),
+    )
+    .where(
+      and(
+        eq(conversationParticipant.conversationId, conversationId),
+        eq(conversationParticipant.userId, userId),
+      ),
+    )
+    .limit(1);
+
+  if (!membership) throw new AppError("Conversation not found", 404);
+
+  if (!membership.isGroup)
+    throw new AppError("Only group conversations can be updated", 400);
+
+  if (membership.role !== "admin")
+    throw new AppError("Only group admins can update the conversation", 403);
+
+  if (name === undefined && avatarUrl === undefined)
+    throw new AppError("Nothing to update", 400);
+
+  const [updatedConversation] = await db
+    .update(conversation)
+    .set({
+      ...(name !== undefined && { name }),
+      ...(avatarUrl !== undefined && { avatarUrl }),
+    })
+    .where(eq(conversation.id, conversationId))
+    .returning({
+      id: conversation.id,
+      isGroup: conversation.isGroup,
+      name: conversation.name,
+      avatarUrl: conversation.avatarUrl,
+      createdBy: conversation.createdBy,
+      createdAt: conversation.createdAt,
+      updatedAt: conversation.updatedAt,
+    });
+
+  return updatedConversation;
+}
