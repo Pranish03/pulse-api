@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import {
+  addParticipantsToConversation,
   createConversation,
   deleteOrLeaveConversation,
   getConversationById,
@@ -7,6 +8,7 @@ import {
   updateConversationById,
 } from "./conversations.service.js";
 import type {
+  AddParticipantsInput,
   ConversationParams,
   CreateConversationInput,
   UpdateConversationInput,
@@ -61,8 +63,21 @@ export async function updateConversation(req: Request, res: Response) {
 export async function deleteConversation(req: Request, res: Response) {
   const { id: userId } = req.user;
   const { id: conversationId } = req.params as unknown as ConversationParams;
-
   const { message } = await deleteOrLeaveConversation(userId, conversationId);
 
   return res.status(200).json({ message });
+}
+
+export async function addParticipants(req: Request, res: Response) {
+  const { id: requesterId } = req.user;
+  const { id: conversationId } = req.params as unknown as ConversationParams;
+  const { participantIds } = req.body as unknown as AddParticipantsInput;
+
+  const added = await addParticipantsToConversation(
+    requesterId,
+    conversationId,
+    participantIds,
+  );
+
+  return res.status(201).json({ message: "Participants added", data: added });
 }

@@ -33,3 +33,11 @@ export const updateConversationSchema = z
   .partial();
 
 export type UpdateConversationInput = z.infer<typeof updateConversationSchema>;
+
+export const addParticipantsSchema = z.object({
+  participantIds: z
+    .array(z.string().min(1))
+    .min(1, "At least one user is required"),
+});
+
+export type AddParticipantsInput = z.infer<typeof addParticipantsSchema>;

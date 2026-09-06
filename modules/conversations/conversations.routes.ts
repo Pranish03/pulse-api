@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  addParticipants,
   createNewConversation,
   deleteConversation,
   getAllConversations,
@@ -9,6 +10,7 @@ import {
 import { requireAuth } from "../../middlewares/auth.middleware.js";
 import { validate } from "../../middlewares/validate.middleware.js";
 import {
+  addParticipantsSchema,
   conversationParamsSchema,
   createConversationSchema,
   updateConversationSchema,
@@ -51,9 +53,10 @@ conversationRouter.delete(
   deleteConversation,
 );
 
-/**
- * Todo:
- * DELETE	/api/conversations/:id	                        Delete/leave a conversation
- * POST	    /api/conversations/:id/participants	            Add member(s) to a group
- * DELETE	/api/conversations/:id/participants/:userId	    Remove a member / leave
- */
+conversationRouter.post(
+  "/:id/participants",
+  requireAuth,
+  validate(conversationParamsSchema, "params"),
+  validate(addParticipantsSchema, "body"),
+  addParticipants,
+);

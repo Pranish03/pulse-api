@@ -275,3 +275,53 @@ export async function deleteOrLeaveConversation(
 
   return { message: "Left conversation successfully" };
 }
+
+export async function addParticipantsToConversation(
+  requesterId: string,
+  conversationId: string,
+  participantIds: string[],
+) {
+  const [membership] = await db
+    .select({
+      role: conversationParticipant.role,
+      isGroup: conversation.isGroup,
+    })
+    .from(conversationParticipant)
+    .innerJoin(
+      conversation,
+      eq(conversationParticipant.conversationId, conversation.id),
+    )
+    .where(
+      and(
+        eq(conversationParticipant.conversationId, conversationId),
+        eq(conversationParticipant.userId, requesterId),
+      ),
+    )
+    .limit(1);
+
+  if (!membership) throw new AppError("Conversation not found", 404);
+  if (!membership.isGroup)
+    throw new AppError("Cannot add participants to a direct message", 400);
+  if (membership.role !== "admin")
+    throw new AppError("Only group admins can add participants", 403);
+
+  const existing = await db
+    .select({ userId: conversationParticipant.userId })
+    .from(conversationParticipant)
+    .where(eq(conversationParticipant.conversationId, conversationId));
+
+  const existingIds = new Set(existing.map((p) => p.userId));
+  const newIds = participantIds.filter((id) => !existingIds.has(id));
+
+  if (newIds.length === 0)
+    throw new AppError("All users are already participants", 400);
+
+  const inserted = await db
+    .insert(conversationParticipant)
+    .values(
+      newIds.map((userId) => ({ conversationId, userId, role: "member" })),
+    )
+    .returning();
+
+  return inserted;
+}
