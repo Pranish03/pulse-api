@@ -7,9 +7,12 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema.js";
+import { randomUUID } from "node:crypto";
 
 export const conversation = pgTable("conversation", {
-  id: text("id").primaryKey(),
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => randomUUID()),
   isGroup: boolean("is_group").notNull().default(false),
   name: text("name"),
   avatarUrl: text("avatar_url"),
@@ -24,7 +27,9 @@ export const conversation = pgTable("conversation", {
 export const conversationParticipant = pgTable(
   "conversation_participant",
   {
-    id: text("id").primaryKey(),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
     conversationId: text("conversation_id")
       .notNull()
       .references(() => conversation.id, { onDelete: "cascade" }),
