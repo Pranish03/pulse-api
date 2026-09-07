@@ -4,6 +4,7 @@ import {
   deleteMessageById,
   editMessageById,
   getMessageHistory,
+  markConversationAsRead,
   sendMessageToConversation,
 } from "./messages.service.js";
 import type {
@@ -49,4 +50,12 @@ export async function deleteMessage(req: Request, res: Response) {
   return res
     .status(200)
     .json({ message: "Message deleted successfully", data });
+}
+
+export async function markAsRead(req: Request, res: Response) {
+  const { id: userId } = req.user;
+  const { id: conversationId } = req.params as unknown as ConversationParams;
+  const data = await markConversationAsRead(userId, conversationId);
+
+  return res.status(200).json({ data });
 }

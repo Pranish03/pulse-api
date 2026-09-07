@@ -167,3 +167,30 @@ export async function deleteMessageById(userId: string, messageId: string) {
 
   return { ...deletedMessage, content: "This message was deleted" };
 }
+
+export async function markConversationAsRead(
+  userId: string,
+  conversationId: string,
+) {
+  const [participant] = await db
+    .update(conversationParticipant)
+    .set({
+      lastReadAt: new Date(),
+    })
+    .where(
+      and(
+        eq(conversationParticipant.conversationId, conversationId),
+        eq(conversationParticipant.userId, userId),
+      ),
+    )
+    .returning({
+      id: conversationParticipant.id,
+      conversationId: conversationParticipant.conversationId,
+      userId: conversationParticipant.userId,
+      lastReadAt: conversationParticipant.lastReadAt,
+    });
+
+  if (!participant) throw new AppError("Conversation not found", 404);
+
+  return participant;
+}

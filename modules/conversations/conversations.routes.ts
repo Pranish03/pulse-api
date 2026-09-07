@@ -19,7 +19,11 @@ import {
 } from "./conversations.schema.js";
 import { uploadToCloudinary } from "../../middlewares/upload.middleware.js";
 import { upload } from "../../lib/multer.js";
-import { getMessages, sendMessage } from "../messages/messages.controller.js";
+import {
+  getMessages,
+  markAsRead,
+  sendMessage,
+} from "../messages/messages.controller.js";
 import {
   messageQuerySchema,
   sendMessageSchema,
@@ -89,4 +93,11 @@ conversationRouter.post(
   validate(conversationParamsSchema, "params"),
   validate(sendMessageSchema, "body"),
   sendMessage,
+);
+
+conversationRouter.post(
+  "/:id/read",
+  requireAuth,
+  validate(conversationParamsSchema, "params"),
+  markAsRead,
 );
