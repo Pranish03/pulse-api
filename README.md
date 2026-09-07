@@ -1,8 +1,8 @@
 # Pulse
 
-Pulse is a real-time, person-to-person and group chat application. This repository contains the backend API — built by hand from raw documentation as a learning-focused project, with authentication, friendships, and conversation management already working, and real-time messaging via Socket.io still in progress.
+Pulse is a real-time, person-to-person and group chat application. This repository contains the backend API — built by hand from raw documentation as a learning-focused project. Authentication, users, friendships, conversations, and messages are all functional; the Socket.io real-time layer is next.
 
-> **Status: work in progress.** The REST API for users, friendships, and conversations is functional. Messages and the Socket.io real-time layer are actively being built.
+> **Status: work in progress.** The full REST API (users, friendships, conversations, messages) is functional. The Socket.io real-time layer is actively being built.
 
 ## Tech Stack
 
@@ -33,10 +33,10 @@ Pulse is a real-time, person-to-person and group chat application. This reposito
 - **Users** — profile retrieval and updates (name, avatar via Cloudinary upload), user search
 - **Friendships** — send/accept/reject friend requests, list friends and pending requests (incoming/outgoing), block/remove
 - **Conversations** — create direct (1:1) and group conversations, list a user's conversations, view conversation details, update group name/avatar, add/remove participants, leave a group (with automatic admin hand-off if the last admin leaves)
+- **Messages** — send, edit (soft, sender-only), delete (soft, with content redacted on both the delete response and subsequent history fetches), cursor-based paginated history per conversation, mark conversation as read
 
 ### In progress
 
-- **Messages** — sending, editing (soft), deleting (soft), paginated history per conversation
 - **Real-time layer** — Socket.io events for message delivery, typing indicators, and presence
 
 ### Planned
@@ -87,7 +87,11 @@ pulse-backend/
 │   │   ├── conversations.routes.ts
 │   │   ├── conversations.schema.ts
 │   │   └── conversations.service.ts
-│   └── messages/                       # in progress
+│   └── messages/
+│       ├── message.controller.ts
+│       ├── message.routes.ts
+│       ├── message.schema.ts
+│       └── message.service.ts
 ├── types/
 │   └── express.d.ts        # Request type augmentation (req.user, Multer.File.cloudinary)
 ├── index.ts                # server entry point (Express app, HTTP server, Socket.io)
@@ -117,6 +121,7 @@ Design notes:
 - `randomUUID()` via `$defaultFn` generates IDs on all custom tables.
 - A composite index on `message(conversationId, createdAt)` supports paginated message history.
 - `relations()` calls live in a single `relations.ts` file, separate from table definitions, to avoid circular imports across schema files.
+- Deleted messages are redacted server-side (`content` replaced with a placeholder) rather than relying on the client to hide them, so the real text never leaves the API once a message is deleted.
 
 ## Getting Started
 
