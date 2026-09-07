@@ -34,23 +34,22 @@ export async function createConversation(
   conversation: typeof conversation.$inferSelect;
   created: boolean;
 }> {
-  if (participantIds.length === 0) {
+  if (participantIds.length === 0)
     throw new AppError("At least one participant is required", 400);
-  }
 
   if (!isGroup) {
-    if (participantIds.length !== 1) {
+    if (participantIds.length !== 1)
       throw new AppError(
         "Direct messages must have exactly one other participant",
         400,
       );
-    }
 
     const otherUserId = participantIds[0];
     const existing = await findExistingDirectConversation(
       creatorId,
       otherUserId,
     );
+
     if (existing) {
       const [existingConversation] = await db
         .select()
@@ -61,9 +60,8 @@ export async function createConversation(
     }
   }
 
-  if (isGroup && !name) {
+  if (isGroup && !name)
     throw new AppError("Group conversations require a name", 400);
-  }
 
   const [newConversation] = await db
     .insert(conversation)
@@ -142,6 +140,7 @@ export async function getConversationById(
   if (result.length === 0) throw new AppError("Conversation not found", 404);
 
   const isParticipant = result.some((row) => row.participant.userId === userId);
+
   if (!isParticipant) throw new AppError("Conversation not found", 404);
 
   return {
@@ -230,9 +229,8 @@ export async function deleteOrLeaveConversation(
 
   if (!membership) throw new AppError("Conversation not found", 404);
 
-  if (!membership.isGroup) {
+  if (!membership.isGroup)
     throw new AppError("You cannot leave a direct message conversation", 400);
-  }
 
   const remainingParticipants = await db
     .select({
@@ -300,8 +298,10 @@ export async function addParticipantsToConversation(
     .limit(1);
 
   if (!membership) throw new AppError("Conversation not found", 404);
+
   if (!membership.isGroup)
     throw new AppError("Cannot add participants to a direct message", 400);
+
   if (membership.role !== "admin")
     throw new AppError("Only group admins can add participants", 403);
 
@@ -350,18 +350,17 @@ export async function removeParticipantFromConversation(
     .limit(1);
 
   if (!membership) throw new AppError("Conversation not found", 404);
+
   if (!membership.isGroup)
     throw new AppError("Cannot remove participants from a direct message", 400);
 
   const isSelfRemoval = requesterId === targetUserId;
 
-  if (!isSelfRemoval && membership.role !== "admin") {
+  if (!isSelfRemoval && membership.role !== "admin")
     throw new AppError("Only group admins can remove other participants", 403);
-  }
 
-  if (isSelfRemoval) {
+  if (isSelfRemoval)
     return deleteOrLeaveConversation(requesterId, conversationId);
-  }
 
   const [target] = await db
     .select({ id: conversationParticipant.id })

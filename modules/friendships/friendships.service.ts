@@ -57,9 +57,8 @@ export async function createFriendRequest(
   requesterId: string,
   addresseeId: string,
 ) {
-  if (requesterId === addresseeId) {
+  if (requesterId === addresseeId)
     throw new AppError("You cannot send a friend request to yourself", 400);
-  }
 
   const [addressee] = await db
     .select({ id: user.id })
@@ -67,9 +66,7 @@ export async function createFriendRequest(
     .where(eq(user.id, addresseeId))
     .limit(1);
 
-  if (!addressee) {
-    throw new AppError("User not found", 404);
-  }
+  if (!addressee) throw new AppError("User not found", 404);
 
   const [existingFriendship] = await db
     .select()
@@ -88,9 +85,7 @@ export async function createFriendRequest(
     )
     .limit(1);
 
-  if (existingFriendship) {
-    throw new AppError("Friendship already exists", 400);
-  }
+  if (existingFriendship) throw new AppError("Friendship already exists", 400);
 
   const [newFriendship] = await db
     .insert(friendship)

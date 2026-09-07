@@ -11,9 +11,7 @@ export async function getMessageHistory(
   cursor?: string,
 ) {
   const [membership] = await db
-    .select({
-      id: conversationParticipant.id,
-    })
+    .select({ id: conversationParticipant.id })
     .from(conversationParticipant)
     .where(
       and(
@@ -46,10 +44,15 @@ export async function getMessageHistory(
     .limit(limit + 1);
 
   const hasMore = messages.length > limit;
-  const data = hasMore ? messages.slice(0, limit) : messages;
+  const page = hasMore ? messages.slice(0, limit) : messages;
+
+  const data = page.map((m) =>
+    m.deletedAt ? { ...m, content: "This message was deleted" } : m,
+  );
+
   const nextCursor =
-    hasMore && data.length > 0
-      ? data[data.length - 1].createdAt.toISOString()
+    hasMore && page.length > 0
+      ? page[page.length - 1].createdAt.toISOString()
       : null;
 
   return {
@@ -128,12 +131,11 @@ export async function editMessageById(
       deletedAt: message.deletedAt,
     });
 
-  if (!updatedMessage) {
+  if (!updatedMessage)
     throw new AppError(
       "Message not found or you cannot edit this message",
       404,
     );
-  }
 
   return updatedMessage;
 }
