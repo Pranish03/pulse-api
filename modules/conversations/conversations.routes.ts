@@ -19,8 +19,11 @@ import {
 } from "./conversations.schema.js";
 import { uploadToCloudinary } from "../../middlewares/upload.middleware.js";
 import { upload } from "../../lib/multer.js";
-import { getMessages } from "../messages/messages.controller.js";
-import { messageQuerySchema } from "../messages/messages.schema.js";
+import { getMessages, sendMessage } from "../messages/messages.controller.js";
+import {
+  messageQuerySchema,
+  sendMessageSchema,
+} from "../messages/messages.schema.js";
 
 export const conversationRouter = Router();
 
@@ -78,4 +81,12 @@ conversationRouter.get(
   validate(conversationParamsSchema, "params"),
   validate(messageQuerySchema, "query"),
   getMessages,
+);
+
+conversationRouter.post(
+  "/:id/messages",
+  requireAuth,
+  validate(conversationParamsSchema, "params"),
+  validate(sendMessageSchema, "body"),
+  sendMessage,
 );

@@ -1,7 +1,10 @@
 import type { Request, Response } from "express";
 import type { ConversationParams } from "../conversations/conversations.schema.js";
-import { getMessageHistory } from "./messages.service.js";
-import type { MessageQuery } from "./messages.schema.js";
+import {
+  getMessageHistory,
+  sendMessageToConversation,
+} from "./messages.service.js";
+import type { MessageQuery, SendMessageInput } from "./messages.schema.js";
 
 export async function getMessages(req: Request, res: Response) {
   const { id: userId } = req.user;
@@ -10,4 +13,13 @@ export async function getMessages(req: Request, res: Response) {
   const data = await getMessageHistory(userId, conversationId, limit, cursor);
 
   return res.status(200).json({ data });
+}
+
+export async function sendMessage(req: Request, res: Response) {
+  const { id: userId } = req.user;
+  const { id: conversationId } = req.params as unknown as ConversationParams;
+  const { content } = req.body as unknown as SendMessageInput;
+  const data = await sendMessageToConversation(userId, conversationId, content);
+
+  return res.status(201).json({ message: "Message sent successfully", data });
 }

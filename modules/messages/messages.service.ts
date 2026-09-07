@@ -2,6 +2,7 @@ import { and, desc, eq, lt } from "drizzle-orm";
 import { db } from "../../drizzle/db.js";
 import { conversationParticipant, message } from "../../drizzle/schema.js";
 import { AppError } from "../../lib/errors.js";
+import { randomUUID } from "node:crypto";
 
 export async function getMessageHistory(
   userId: string,
@@ -59,4 +60,42 @@ export async function getMessageHistory(
       nextCursor,
     },
   };
+}
+
+export async function sendMessageToConversation(
+  userId: string,
+  conversationId: string,
+  content: string,
+) {
+  const [membership] = await db
+    .select({
+      id: conversationParticipant.id,
+    })
+    .from(conversationParticipant)
+    .where(
+      and(
+        eq(conversationParticipant.conversationId, conversationId),
+        eq(conversationParticipant.userId, userId),
+      ),
+    )
+    .limit(1);
+
+  if (!membership) throw new AppError("Conversation not found", 404);
+
+  return db
+    .insert(message)
+    .values({
+      id: randomUUID(),
+      conversationId,
+      senderId: userId,
+      content,
+    })
+    .returning({
+      id: message.id,
+      conversationId: message.conversationId,
+      senderId: message.senderId,
+      content: message.content,
+      createdAt: message.createdAt,
+      updatedAt: message.updatedAt,
+    });
 }

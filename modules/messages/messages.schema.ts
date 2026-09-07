@@ -6,3 +6,13 @@ export const messageQuerySchema = z.object({
 });
 
 export type MessageQuery = z.infer<typeof messageQuerySchema>;
+
+export const sendMessageSchema = z.object({
+  content: z
+    .string()
+    .trim()
+    .min(1, "Message cannot be empty")
+    .max(5000, "Message is too long"),
+});
+
+export type SendMessageInput = z.infer<typeof sendMessageSchema>;
