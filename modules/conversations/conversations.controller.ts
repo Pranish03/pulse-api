@@ -48,7 +48,8 @@ export async function getConversation(req: Request, res: Response) {
 export async function updateConversation(req: Request, res: Response) {
   const { id: userId } = req.user;
   const { id: conversationId } = req.params as unknown as ConversationParams;
-  const { name, avatarUrl } = req.body as unknown as UpdateConversationInput;
+  const { name, image: avatarUrl } =
+    req.body as unknown as UpdateConversationInput;
   const updatedConversation = await updateConversationById(
     userId,
     conversationId,

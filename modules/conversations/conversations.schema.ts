@@ -28,7 +28,7 @@ export type ConversationParams = z.infer<typeof conversationParamsSchema>;
 export const updateConversationSchema = z
   .object({
     name: z.string().min(1).max(100),
-    avatarUrl: z.string().url(),
+    image: z.url("Invalid image URL"),
   })
   .partial();
 

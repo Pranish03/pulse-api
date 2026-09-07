@@ -11,13 +11,23 @@ export function validate<T extends ZodType>(
   return (req: Request, res: Response, next: NextFunction) => {
     const parsedData = z.safeParse(schema, req[target]);
 
-    if (!parsedData.success)
+    if (!parsedData.success) {
       return res.status(400).json({
         message: "Validation error",
         error: z.prettifyError(parsedData.error),
       });
+    }
 
-    req[target] = parsedData.data;
+    if (target === "query") {
+      Object.defineProperty(req, "query", {
+        value: parsedData.data,
+        writable: true,
+        configurable: true,
+      });
+    } else {
+      req[target] = parsedData.data;
+    }
+
     next();
   };
 }
