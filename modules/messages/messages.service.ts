@@ -105,19 +105,28 @@ export async function editMessageById(
   messageId: string,
   content: string,
 ) {
+  const [existingMessage] = await db
+    .select({
+      id: message.id,
+      senderId: message.senderId,
+      deletedAt: message.deletedAt,
+    })
+    .from(message)
+    .where(eq(message.id, messageId))
+    .limit(1);
+
+  if (!existingMessage) throw new AppError("Message not found", 404);
+
+  if (existingMessage.deletedAt !== null)
+    throw new AppError("Cannot edit a deleted message", 400);
+
+  if (existingMessage.senderId !== userId)
+    throw new AppError("You can only edit your own messages", 403);
+
   const [updatedMessage] = await db
     .update(message)
-    .set({
-      content,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(message.id, messageId),
-        eq(message.senderId, userId),
-        isNull(message.deletedAt),
-      ),
-    )
+    .set({ content, updatedAt: new Date() })
+    .where(eq(message.id, messageId))
     .returning({
       id: message.id,
       conversationId: message.conversationId,
@@ -127,8 +136,6 @@ export async function editMessageById(
       updatedAt: message.updatedAt,
       deletedAt: message.deletedAt,
     });
-
-  if (!updatedMessage) throw new AppError("Message not found", 404);
 
   return updatedMessage;
 }
