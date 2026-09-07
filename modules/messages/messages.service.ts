@@ -1,4 +1,4 @@
-import { and, desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq, isNull, lt } from "drizzle-orm";
 import { db } from "../../drizzle/db.js";
 import { conversationParticipant, message } from "../../drizzle/schema.js";
 import { AppError } from "../../lib/errors.js";
@@ -98,4 +98,37 @@ export async function sendMessageToConversation(
       createdAt: message.createdAt,
       updatedAt: message.updatedAt,
     });
+}
+
+export async function editMessageById(
+  userId: string,
+  messageId: string,
+  content: string,
+) {
+  const [updatedMessage] = await db
+    .update(message)
+    .set({
+      content,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(message.id, messageId),
+        eq(message.senderId, userId),
+        isNull(message.deletedAt),
+      ),
+    )
+    .returning({
+      id: message.id,
+      conversationId: message.conversationId,
+      senderId: message.senderId,
+      content: message.content,
+      createdAt: message.createdAt,
+      updatedAt: message.updatedAt,
+      deletedAt: message.deletedAt,
+    });
+
+  if (!updatedMessage) throw new AppError("Message not found", 404);
+
+  return updatedMessage;
 }

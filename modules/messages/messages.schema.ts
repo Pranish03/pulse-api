@@ -16,3 +16,9 @@ export const sendMessageSchema = z.object({
 });
 
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
+
+export const messageParamsSchema = z.object({
+  id: z.uuid("Invalid message ID"),
+});
+
+export type MessageParams = z.infer<typeof messageParamsSchema>;
