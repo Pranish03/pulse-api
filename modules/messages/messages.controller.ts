@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import type { ConversationParams } from "../conversations/conversations.schema.js";
 import {
+  deleteMessageById,
   editMessageById,
   getMessageHistory,
   sendMessageToConversation,
@@ -38,4 +39,14 @@ export async function editMessage(req: Request, res: Response) {
   return res
     .status(200)
     .json({ message: "Message updated successfully", data });
+}
+
+export async function deleteMessage(req: Request, res: Response) {
+  const { id: userId } = req.user;
+  const { id: messageId } = req.params as unknown as MessageParams;
+  const data = await deleteMessageById(userId, messageId);
+
+  return res
+    .status(200)
+    .json({ message: "Message deleted successfully", data });
 }
