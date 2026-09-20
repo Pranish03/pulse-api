@@ -6,23 +6,61 @@ import {
   user,
 } from "../../drizzle/schema.js";
 import { AppError } from "../../lib/errors.js";
+import { alias } from "drizzle-orm/pg-core";
 
 export async function getConversationsForUser(userId: string) {
-  return db
+  const allParticipants = alias(conversationParticipant, "all_participants");
+
+  const rows = await db
     .select({
-      id: conversation.id,
+      conversationId: conversation.id,
       isGroup: conversation.isGroup,
       name: conversation.name,
       avatarUrl: conversation.avatarUrl,
       createdAt: conversation.createdAt,
       updatedAt: conversation.updatedAt,
+      participantUserId: user.id,
+      participantName: user.name,
+      participantImage: user.image,
     })
     .from(conversationParticipant)
     .innerJoin(
       conversation,
       eq(conversationParticipant.conversationId, conversation.id),
     )
+    .innerJoin(
+      allParticipants,
+      eq(allParticipants.conversationId, conversation.id),
+    )
+    .innerJoin(user, eq(allParticipants.userId, user.id))
     .where(eq(conversationParticipant.userId, userId));
+
+  const grouped = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const existing = grouped.get(row.conversationId) ?? [];
+    existing.push(row);
+    grouped.set(row.conversationId, existing);
+  }
+
+  return Array.from(grouped.values()).map((conversationRows) => {
+    const first = conversationRows[0];
+    const otherParticipant = conversationRows.find(
+      (r) => r.participantUserId !== userId,
+    );
+
+    return {
+      id: first.conversationId,
+      isGroup: first.isGroup,
+      name: first.isGroup
+        ? first.name
+        : (otherParticipant?.participantName ?? null),
+      avatarUrl: first.isGroup
+        ? first.avatarUrl
+        : (otherParticipant?.participantImage ?? null),
+      createdAt: first.createdAt,
+      updatedAt: first.updatedAt,
+    };
+  });
 }
 
 export async function createConversation(
