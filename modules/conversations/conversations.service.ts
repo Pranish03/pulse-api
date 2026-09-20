@@ -53,6 +53,7 @@ export async function getConversationsForUser(userId: string) {
             content: message.content,
             createdAt: message.createdAt,
             deletedAt: message.deletedAt,
+            senderId: message.senderId,
             senderName: user.name,
           })
           .from(message)
@@ -92,10 +93,11 @@ export async function getConversationsForUser(userId: string) {
       updatedAt: first.updatedAt,
       lastMessage: lastMessage
         ? {
+            senderId: lastMessage.senderId,
+            senderName: lastMessage.senderName,
             content: lastMessage.deletedAt
               ? "This message was deleted"
               : lastMessage.content,
-            senderName: lastMessage.senderName,
             createdAt: lastMessage.createdAt,
           }
         : null,
