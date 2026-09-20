@@ -1,8 +1,9 @@
-import { and, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { db } from "../../drizzle/db.js";
 import {
   conversation,
   conversationParticipant,
+  message,
   user,
 } from "../../drizzle/schema.js";
 import { AppError } from "../../lib/errors.js";
@@ -42,11 +43,41 @@ export async function getConversationsForUser(userId: string) {
     grouped.set(row.conversationId, existing);
   }
 
+  const conversationIds = Array.from(grouped.keys());
+
+  const recentMessages =
+    conversationIds.length > 0
+      ? await db
+          .select({
+            conversationId: message.conversationId,
+            content: message.content,
+            createdAt: message.createdAt,
+            deletedAt: message.deletedAt,
+            senderName: user.name,
+          })
+          .from(message)
+          .innerJoin(user, eq(message.senderId, user.id))
+          .where(inArray(message.conversationId, conversationIds))
+          .orderBy(desc(message.createdAt))
+      : [];
+
+  const lastMessageByConversation = new Map<
+    string,
+    (typeof recentMessages)[number]
+  >();
+
+  for (const msg of recentMessages) {
+    if (!lastMessageByConversation.has(msg.conversationId)) {
+      lastMessageByConversation.set(msg.conversationId, msg);
+    }
+  }
+
   return Array.from(grouped.values()).map((conversationRows) => {
     const first = conversationRows[0];
     const otherParticipant = conversationRows.find(
       (r) => r.participantUserId !== userId,
     );
+    const lastMessage = lastMessageByConversation.get(first.conversationId);
 
     return {
       id: first.conversationId,
@@ -59,6 +90,15 @@ export async function getConversationsForUser(userId: string) {
         : (otherParticipant?.participantImage ?? null),
       createdAt: first.createdAt,
       updatedAt: first.updatedAt,
+      lastMessage: lastMessage
+        ? {
+            content: lastMessage.deletedAt
+              ? "This message was deleted"
+              : lastMessage.content,
+            senderName: lastMessage.senderName,
+            createdAt: lastMessage.createdAt,
+          }
+        : null,
     };
   });
 }
