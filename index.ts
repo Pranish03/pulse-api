@@ -22,6 +22,8 @@ app.use(
   }),
 );
 
+app.set("etag", false);
+
 app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(express.json());
 
