@@ -9,6 +9,21 @@ import {
 import { AppError } from "../../lib/errors.js";
 import { alias } from "drizzle-orm/pg-core";
 
+function getDmDisplayInfo(
+  isGroup: boolean,
+  conversationName: string | null,
+  conversationAvatarUrl: string | null,
+  otherParticipantName: string | undefined,
+  otherParticipantImage: string | undefined,
+) {
+  return {
+    name: isGroup ? conversationName : (otherParticipantName ?? null),
+    avatarUrl: isGroup
+      ? conversationAvatarUrl
+      : (otherParticipantImage ?? null),
+  };
+}
+
 export async function getConversationsForUser(userId: string) {
   const allParticipants = alias(conversationParticipant, "all_participants");
 
@@ -66,7 +81,6 @@ export async function getConversationsForUser(userId: string) {
     string,
     (typeof recentMessages)[number]
   >();
-
   for (const msg of recentMessages) {
     if (!lastMessageByConversation.has(msg.conversationId)) {
       lastMessageByConversation.set(msg.conversationId, msg);
@@ -80,15 +94,19 @@ export async function getConversationsForUser(userId: string) {
     );
     const lastMessage = lastMessageByConversation.get(first.conversationId);
 
+    const { name, avatarUrl } = getDmDisplayInfo(
+      first.isGroup,
+      first.name,
+      first.avatarUrl,
+      otherParticipant?.participantName,
+      otherParticipant?.participantImage ?? undefined,
+    );
+
     return {
       id: first.conversationId,
       isGroup: first.isGroup,
-      name: first.isGroup
-        ? first.name
-        : (otherParticipant?.participantName ?? null),
-      avatarUrl: first.isGroup
-        ? first.avatarUrl
-        : (otherParticipant?.participantImage ?? null),
+      name,
+      avatarUrl,
       createdAt: first.createdAt,
       updatedAt: first.updatedAt,
       lastMessage: lastMessage
@@ -220,11 +238,29 @@ export async function getConversationById(
   if (result.length === 0) throw new AppError("Conversation not found", 404);
 
   const isParticipant = result.some((row) => row.participant.userId === userId);
-
   if (!isParticipant) throw new AppError("Conversation not found", 404);
+
+  const {
+    isGroup,
+    name: conversationName,
+    avatarUrl: conversationAvatarUrl,
+  } = result[0].conversation;
+  const otherParticipant = result.find(
+    (row) => row.participant.userId !== userId,
+  );
+
+  const { name, avatarUrl } = getDmDisplayInfo(
+    isGroup,
+    conversationName,
+    conversationAvatarUrl,
+    otherParticipant?.participant.name,
+    otherParticipant?.participant.image ?? undefined,
+  );
 
   return {
     ...result[0].conversation,
+    name,
+    avatarUrl,
     participants: result.map((row) => row.participant),
   };
 }
