@@ -17,9 +17,9 @@ export async function getMessages(req: Request, res: Response) {
   const { id: userId } = req.user;
   const { id: conversationId } = req.params as unknown as ConversationParams;
   const { limit, cursor } = req.query as unknown as MessageQuery;
-  const data = await getMessageHistory(userId, conversationId, limit, cursor);
+  const result = await getMessageHistory(userId, conversationId, limit, cursor);
 
-  return res.status(200).json({ data });
+  return res.status(200).json(result);
 }
 
 export async function sendMessage(req: Request, res: Response) {
